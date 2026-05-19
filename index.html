@@ -419,62 +419,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 </div>
 
 <script>
-// ─── ACCIONES (estáticas, puedes moverlas a Firebase si también las editas) ──
-const ACCIONES={
-  'Sebastián':[
-    {pr:'PR 474 / PR 475',ac:'Informe de reparación.'},
-    {pr:'PR 467 / PR 504',ac:'Informe de reparación.'},
-    {pr:'PR 404',ac:'Informe de reparación.'},
-    {pr:'PR 499',ac:'Informe de reparación.'},
-    {pr:'PR 513 / PR 514',ac:'Check list de recepción.'},
-    {pr:'PR 504',ac:'Etiquetas de fin del servicio.'},
-  ],
-  'Sandro':[
-    {pr:'PR 481 / PR 490 / PR 495 / PR 497',ac:'Enviar costeo al cliente.'},
-    {pr:'PR 487',ac:'Enviar costeo actualizado (nuevos precios Rexnord).'},
-    {pr:'KALLPA (Visita)',ac:'Informe de visita.'},
-    {pr:'ISCAYCRUZ (Visita)',ac:'Revisión final de informe de visita.'},
-  ],
-  'Javier C.':[
-    {pr:'PR 391 / PR 399 / PR 488',ac:'Coordinar recojo de equipos (Devolución).'},
-    {pr:'PR 476',ac:'Confirmar fecha de llegada de repuestos faltantes.'},
-    {pr:'PR 487',ac:'Seguimiento a respuesta del cliente.'},
-    {pr:'PR 491',ac:'Confirmar fecha estimada llegada repuestos de fábrica.'},
-    {pr:'PDV 4456',ac:'Enviar planos al área de QC.'},
-    {pr:'PAS HUARÓN / ANTAMINA (Visita)',ac:'Definir fechas de visita.'},
-  ],
-  'Orestes O.':[
-    {pr:'PR 381',ac:'Coordinar envío de soportes laterales del P&C.'},
-    {pr:'PR 463',ac:'Gestionar O/C por inspección y repuestos.'},
-  ],
-  'Logística':[
-    {pr:'PR 404 / PR 467 / PR 504 / PR 506',ac:'Embalaje de equipos y envío de información de bultos.'},
-    {pr:'Fabricaciones (general)',ac:'Poner en copia a Servicios/Calidad al enviar O/Cs a 4LF.'},
-    {pr:'Fabricaciones (general)',ac:'Solicitar planos previamente y enviarlos junto con O/Cs.'},
-  ],
-  'Jonatán R.':[
-    {pr:'PR 478',ac:'Seguimiento a respuesta del cliente y consultar sentido de giro.'},
-    {pr:'PR 506',ac:'Coordinar embalaje del equipo con Logística.'},
-    {pr:'METSO (Visita)',ac:'Definir fechas de visita.'},
-  ],
-  'Gerson O.':[
-    {pr:'PR 500',ac:'Seguimiento respuesta fábrica sobre garantía. ¿Repuestos de fábrica?'},
-    {pr:'PR 503',ac:'Notificar al equipo tras recepción de la O/C.'},
-  ],
-  'Gabriela C.':[
-    {pr:'PR 429',ac:'Confirmar fecha llegada repuestos y velocidad de operación.'},
-    {pr:'PR 502',ac:'Confirmación previa para apertura del equipo.'},
-  ],
-  'Juan Carlos G.':[
-    {pr:'PDV 4512',ac:'Enviar planos al área de QC para validación.'},
-    {pr:'METSO (Visita)',ac:'Definir fechas de visita.'},
-  ],
-  'Dennys H.':[
-    {pr:'PR 416',ac:'Seguimiento a respuesta del cliente.'},
-    {pr:'PR 509',ac:'Decidir si se reparará el equipo.'},
-  ],
-};
-
 // ─── HELPERS ────────────────────────────────────────────────────────────────
 const prColors={
   'Alta':{bg:'#fdeaea',tx:'#b91c1c',bd:'#f59595'},
@@ -573,15 +517,26 @@ function renderServicios(){
 function applyFilters(){renderServicios();}
 
 // ─── SEMÁFORO ───────────────────────────────────────────────────────────────
+function calcDias(p){
+  // Calcula días restantes desde hoy hasta fecha de entrega
+  if(!p.date || ['Finalizado','Devolución','Sin OC','Stand-by'].includes(p.pr)) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const entrega = new Date(p.date); entrega.setHours(0,0,0,0);
+  return Math.round((entrega - today) / (1000*60*60*24));
+}
+
 function renderSemaforo(){
   const S=window._SERVICIOS||[];
-  const activos=S.filter(p=>!['Finalizado','Devolución','Sin OC'].includes(p.pr)&&p.dias!==0);
-  const vencidos=activos.filter(p=>p.dias<0).sort((a,b)=>a.dias-b.dias);
-  const pronto=activos.filter(p=>p.dias>=0&&p.dias<=30).sort((a,b)=>a.dias-b.dias);
-  const ok=activos.filter(p=>p.dias>30).sort((a,b)=>a.dias-b.dias);
+  const activos=S.filter(p=>!['Finalizado','Devolución','Sin OC','Stand-by'].includes(p.pr) && p.date);
+  
+  const withDias = activos.map(p=>({...p, _dias: calcDias(p)})).filter(p=>p._dias!==null);
+  const vencidos = withDias.filter(p=>p._dias<0).sort((a,b)=>a._dias-b._dias);
+  const pronto   = withDias.filter(p=>p._dias>=0&&p._dias<=30).sort((a,b)=>a._dias-b._dias);
+  const ok       = withDias.filter(p=>p._dias>30).sort((a,b)=>a._dias-b._dias);
+
   function items(arr){
     if(!arr.length)return`<div class="sem-item" style="color:var(--dim);">Sin proyectos en esta categoría</div>`;
-    return arr.map(p=>`<div class="sem-item"><span style="font-weight:600;">${p.id}</span><span style="font-size:9px;color:var(--dim);">${p.cl}</span><strong>${p.dias}d</strong></div>`).join('');
+    return arr.map(p=>`<div class="sem-item"><span style="font-weight:600;">${p.id}</span><span style="font-size:9px;color:var(--dim);">${p.cl}</span><strong>${p._dias}d</strong></div>`).join('');
   }
   document.getElementById('sem-grid').innerHTML=`
     <div class="sem-card red"><div class="sem-title red">🔴 OC Vencidas (${vencidos.length})</div>${items(vencidos)}</div>
@@ -590,12 +545,41 @@ function renderSemaforo(){
   `;
 }
 
-// ─── ACCIONES ───────────────────────────────────────────────────────────────
+// ─── ACCIONES (dinámico desde Firebase) ─────────────────────────────────────
 function renderAcciones(){
-  document.getElementById('ac-grid').innerHTML=Object.entries(ACCIONES).map(([nom,its])=>`
+  const S=window._SERVICIOS||[];
+  
+  // Agrupar por comercial (team) los proyectos que tienen acciones (campo ac o comt)
+  const grupos = {};
+  S.forEach(p => {
+    if(!p.team) return;
+    // Solo incluir proyectos activos con acciones pendientes
+    if(['Finalizado'].includes(p.pr)) return;
+    
+    const accion = (p.ac||'').trim();
+    const comentario = (p.comt||'').trim();
+    if(!accion && !comentario) return;
+    
+    if(!grupos[p.team]) grupos[p.team] = [];
+    grupos[p.team].push({
+      pr: p.id,
+      cl: p.cl,
+      pr_estado: p.pr,
+      ac: accion || comentario
+    });
+  });
+
+  if(Object.keys(grupos).length === 0){
+    document.getElementById('ac-grid').innerHTML=`<p style="color:var(--dim);font-size:12px;padding:20px;">No hay acciones pendientes.</p>`;
+    return;
+  }
+
+  document.getElementById('ac-grid').innerHTML=Object.entries(grupos)
+    .sort((a,b)=>a[0].localeCompare(b[0]))
+    .map(([nom,its])=>`
     <div class="ac-card">
       <div class="ac-name">👤 ${nom} <span style="color:var(--dim);font-size:9px;">(${its.length})</span></div>
-      ${its.map(it=>`<div class="ac-item"><strong>${it.pr}</strong><br>${it.ac}</div>`).join('')}
+      ${its.map(it=>`<div class="ac-item"><strong>${it.pr} — ${it.cl}</strong><br>${it.ac}</div>`).join('')}
     </div>
   `).join('');
 }
