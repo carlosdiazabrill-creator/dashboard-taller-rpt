@@ -118,6 +118,8 @@
     dbReady = true;
     if(window.renderKPIs) window.renderKPIs();
     if(window.renderServicios) window.renderServicios();
+    if(window.renderSemaforo) window.renderSemaforo();
+    if(window.renderAcciones) window.renderAcciones();
     if(window.updClk) window.updClk();
   });
 
@@ -688,6 +690,8 @@ setInterval(updClk, 30000);
 window._SERVICIOS=[];
 window.renderKPIs=renderKPIs;
 window.renderServicios=renderServicios;
+window.renderSemaforo=renderSemaforo;
+window.renderAcciones=renderAcciones;
 window.updClk=updClk;
 
 document.getElementById('modal').addEventListener('click',e=>{
