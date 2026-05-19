@@ -550,25 +550,14 @@ function renderSemaforo(){
 // ─── ACCIONES (dinámico desde Firebase) ─────────────────────────────────────
 function renderAcciones(){
   const S=window._SERVICIOS||[];
-  
-  // Agrupar por comercial (team) los proyectos que tienen acciones (campo ac o comt)
   const grupos = {};
+
   S.forEach(p => {
     if(!p.team) return;
-    // Solo incluir proyectos activos con acciones pendientes
-    if(['Finalizado'].includes(p.pr)) return;
-    
-    const accion = (p.ac||'').trim();
-    const comentario = (p.comt||'').trim();
-    if(!accion && !comentario) return;
-    
+    if(p.pr==='Finalizado') return; // excluir finalizados
+
     if(!grupos[p.team]) grupos[p.team] = [];
-    grupos[p.team].push({
-      pr: p.id,
-      cl: p.cl,
-      pr_estado: p.pr,
-      ac: accion || comentario
-    });
+    grupos[p.team].push(p);
   });
 
   if(Object.keys(grupos).length === 0){
@@ -576,12 +565,20 @@ function renderAcciones(){
     return;
   }
 
+  const prColors2={'Alta':'#d62b2b','Media':'#c97a00','Baja':'#1751c8','Stand-by':'#6d28d9','Sin OC':'#5a6480','Devolución':'#0077a8'};
+
   document.getElementById('ac-grid').innerHTML=Object.entries(grupos)
     .sort((a,b)=>a[0].localeCompare(b[0]))
     .map(([nom,its])=>`
     <div class="ac-card">
       <div class="ac-name">👤 ${nom} <span style="color:var(--dim);font-size:9px;">(${its.length})</span></div>
-      ${its.map(it=>`<div class="ac-item"><strong>${it.pr} — ${it.cl}</strong><br>${it.ac}</div>`).join('')}
+      ${its.map(it=>`
+        <div class="ac-item">
+          <strong style="color:${prColors2[it.pr]||'#5a6480'};">${it.id} — ${it.cl}</strong>
+          <span style="font-size:8px;background:#f0f3fa;border-radius:4px;padding:1px 5px;margin-left:4px;">${it.pr}</span>
+          ${it.ac ? `<br><span style="color:#1751c8;">→ ${it.ac}</span>` : ''}
+          ${it.comt ? `<br>${it.comt}` : ''}
+        </div>`).join('')}
     </div>
   `).join('');
 }
