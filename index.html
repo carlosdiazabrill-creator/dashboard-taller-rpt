@@ -266,11 +266,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
       <p id="clk">Cargando...</p>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <!-- El filtro de comerciales se construye dinámicamente desde Firebase -->
       <select class="filter-select" id="flt-comercial" onchange="applyFilters()">
         <option value="">Todos los comerciales</option>
-        <option>JAVIER C.</option><option>JONATÁN R.</option><option>GERSON O.</option>
-        <option>DENNYS H.</option><option>ORESTES O.</option><option>GABRIELA C.</option>
-        <option>FRANCO V.</option><option>JUAN CARLOS G.</option>
       </select>
       <div class="sync-badge"><div class="sync-dot"></div>FIREBASE SYNC</div>
       <div class="live-chip"><div class="dot"></div>EN VIVO</div>
@@ -439,7 +437,15 @@ function renderServicios(){
     clientesUnicos.map(c=>`<option${valorActual===c?' selected':''}>${c}</option>`).join('');
   // ────────────────────────────────────────────────────────────────────
 
-  const comFlt=document.getElementById('flt-comercial').value;
+  // ─── Reconstruir filtro de comerciales dinámicamente ────────────────
+  const fltCom = document.getElementById('flt-comercial');
+  const valorActualCom = fltCom.value;
+  const comercialesUnicos = [...new Set(S.map(p=>p.team).filter(Boolean))].sort();
+  fltCom.innerHTML = '<option value="">Todos los comerciales</option>' +
+    comercialesUnicos.map(c=>`<option${valorActualCom===c?' selected':''}>${c}</option>`).join('');
+  // ────────────────────────────────────────────────────────────────────
+
+  const comFlt=fltCom.value;
   const prFlt=document.getElementById('flt-pr').value;
   const clFlt=fltCl.value;
   const srch=(document.getElementById('search').value||'').toLowerCase();
@@ -619,7 +625,8 @@ function saveM(){
     cot:document.getElementById('m-cot').value,
     inf:document.getElementById('m-inf').value,
     comt:document.getElementById('m-comt').value.trim(),
-    ac:'',dias:0
+    ac:'',dias:0,
+    updatedAt: new Date().toISOString()
   };
   if(editId!==-1 && editId!==nid){
     window._fbDelete(editId);
@@ -632,9 +639,24 @@ function saveM(){
 
 function updClk(){
   const e=document.getElementById('clk');
-  if(e)e.textContent='Última actualización: '+new Date().toLocaleTimeString('es-PE');
+  if(!e) return;
+  const S=window._SERVICIOS||[];
+  // Buscar el timestamp más reciente entre todos los proyectos
+  const timestamps = S.map(p=>p.updatedAt).filter(Boolean);
+  if(timestamps.length === 0){
+    e.textContent='Sin modificaciones registradas';
+    return;
+  }
+  const latest = timestamps.reduce((a,b)=> a > b ? a : b);
+  const fecha = new Date(latest);
+  const opciones = {
+    timeZone: 'America/Lima',
+    day:'2-digit', month:'2-digit', year:'2-digit',
+    hour:'2-digit', minute:'2-digit', second:'2-digit',
+    hour12: false
+  };
+  e.textContent = 'Última modificación: ' + fecha.toLocaleString('es-PE', opciones);
 }
-setInterval(updClk, 30000);
 
 window._SERVICIOS=[];
 window.renderKPIs=renderKPIs;
