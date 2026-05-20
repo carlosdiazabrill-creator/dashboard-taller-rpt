@@ -14,10 +14,6 @@
   import { getDatabase, ref, set, onValue, push, remove, update }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  // ╔══════════════════════════════════════════════════╗
-  // ║  🔧 REEMPLAZA ESTOS VALORES CON LOS TUYOS       ║
-  // ║     de Firebase Console → Project Settings       ║
-  // ╚══════════════════════════════════════════════════╝
   const firebaseConfig = {
     apiKey:            "AIzaSyBE5QPMOqE_XLkVyqGmfyca_YfyR17E3qg",
     authDomain:        "taller-rpt.firebaseapp.com",
@@ -31,7 +27,6 @@
   const app  = initializeApp(firebaseConfig);
   const db   = getDatabase(app);
 
-  // ─── Datos iniciales (se cargan SOLO si Firebase está vacío) ───────────
   const DATOS_INICIALES = [
     {id:'PR 381',tipo:'REDUCTOR',modelo:'FALK 485AB3-CS',serie:'MO# 09-068744-01',cl:'SPCC',team:'ORESTES O.',pr:'Stand-by',entry:'2023-09-01',date:'2024-03-11',v:85,terceros:'No',rep:'No',chk:'Sí',cot:'Sí',inf:'No',dias:-669,comt:'Prueba de giro realizada. Vibración elevada. Servicio terminado 12/DIC/2025.',ac:'IMPORTANTE: Orestes: Coordinar envío de soportes laterales del P&C.'},
     {id:'PR 391',tipo:'POLEA',modelo:'PPI TAMBOR Ø36x84"',serie:'SN# 697272-005',cl:'ANTAMINA',team:'JAVIER C.',pr:'Devolución',entry:'2024-01-15',date:'',v:100,terceros:'No',rep:'No',chk:'Sí',cot:'Sí',inf:'No',dias:-159,comt:'Cliente solicitó devolución. Equipo listo para devolución 20/NOV.',ac:'IMPORTANTE: Javier: Coordinar recojo del equipo.'},
@@ -78,12 +73,10 @@
     {id:'PR 514',tipo:'REDUCTOR',modelo:'FALK 345A1-AS #1',serie:'MO# 01-067695-01',cl:'ANTAPACCAY',team:'ORESTES O.',pr:'Baja',entry:'2026-04-28',date:'',v:2,terceros:'No',rep:'No',chk:'No',cot:'No',inf:'No',dias:0,comt:'Equipo recibido 28/ABR. Eje de alta partido identificado.',ac:'Sebastián: Check list de recepción.'},
   ];
 
-  // ─── Estado local (sincronizado con Firebase) ───────────────────────
   let SERVICIOS = [];
-  let fbKeys    = {};   // id proyecto → firebase key
+  let fbKeys    = {};
   let dbReady   = false;
 
-  // ─── Escucha cambios en tiempo real ────────────────────────────────
   const serviciosRef = ref(db, 'servicios');
   onValue(serviciosRef, (snapshot) => {
     const data = snapshot.val();
@@ -91,7 +84,6 @@
     fbKeys = {};
 
     if (!data) {
-      // Base vacía: cargar datos iniciales
       DATOS_INICIALES.forEach(p => {
         const newRef = push(serviciosRef);
         set(newRef, p);
@@ -104,14 +96,12 @@
       fbKeys[val.id] = key;
     });
 
-    // Ordenar por id numérico
     SERVICIOS.sort((a,b) => {
       const na = parseInt(a.id.replace(/\D/g,'')) || 0;
       const nb = parseInt(b.id.replace(/\D/g,'')) || 0;
       return na - nb;
     });
 
-    // Sincronizar con scope global
     window._SERVICIOS = SERVICIOS;
     window._fbKeys = fbKeys;
 
@@ -123,24 +113,19 @@
     if(window.updClk) window.updClk();
   });
 
-  // ─── Guardar (crear o actualizar) ──────────────────────────────────
   window._fbSave = function(obj, editId) {
     if (editId && fbKeys[editId]) {
-      // Actualizar existente
       update(ref(db, 'servicios/' + fbKeys[editId]), obj);
     } else {
-      // Nuevo registro
       push(serviciosRef, obj);
     }
   };
 
-  // ─── Eliminar ──────────────────────────────────────────────────────
   window._fbDelete = function(projectId) {
     const key = fbKeys[projectId];
     if (key) remove(ref(db, 'servicios/' + key));
   };
 
-  // ─── Indicador de conexión ─────────────────────────────────────────
   window._dbReady = () => dbReady;
 </script>
 
@@ -162,7 +147,6 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:16px 12px 48px;}
 
-/* HEADER */
 .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
 .header-left h1{font-size:21px;font-weight:700;letter-spacing:-0.4px;color:var(--text);}
 .header-left p{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);}
@@ -170,11 +154,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.4s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.1}}
 
-/* SYNC BADGE */
 .sync-badge{display:flex;align-items:center;gap:5px;background:#e8eeff;border:1px solid #90a8f5;border-radius:20px;padding:4px 12px;font-size:10px;color:#1751c8;font-family:var(--mono);font-weight:600;}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:#1751c8;animation:blink 2s infinite;}
 
-/* KPI CARDS */
 .kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
@@ -189,14 +171,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .kpi.orange .kpi-val{color:var(--orange);}
 .kpi-lbl{font-size:10px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:0.7px;font-weight:600;}
 
-/* TABS */
 .tabs{display:flex;gap:2px;margin-bottom:16px;border-bottom:2px solid var(--border);overflow-x:auto;}
 .tab{padding:9px 17px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.18s;white-space:nowrap;}
 .tab.active{color:var(--blue);border-bottom-color:var(--blue);}
 .tab:hover:not(.active){color:var(--text);}
 .tab-cnt{display:inline-block;background:var(--blue-bg);color:var(--blue);border-radius:10px;padding:1px 7px;font-size:10px;margin-left:5px;font-family:var(--mono);font-weight:700;}
 
-/* FILTERS */
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
 .filter-select{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--text);font-family:var(--sans);cursor:pointer;outline:none;font-weight:500;box-shadow:var(--shadow);}
 .filter-select:hover,.filter-select:focus{border-color:var(--blue);}
@@ -205,7 +185,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .search-box::placeholder{color:var(--dim);}
 .filter-label{font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
 
-/* TABLE */
 .tbl-wrap{overflow-x:auto;}
 .col-heads{display:grid;grid-template-columns:80px 76px 115px 96px 82px 72px 74px 64px 80px 66px 60px 58px 56px 60px 56px;gap:5px;padding:7px 10px;font-size:8.5px;color:var(--text);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.4px;border-bottom:2px solid var(--border);margin-bottom:6px;}
 .row-wrap{margin-bottom:4px;}
@@ -224,11 +203,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .c-fecha{font-family:var(--mono);font-size:10px;color:var(--text);}
 .c-fecha-in{font-family:var(--mono);font-size:10px;color:var(--blue);font-weight:600;}
 
-/* BADGE */
 .badge{font-size:9px;padding:3px 7px;border-radius:5px;font-weight:700;font-family:var(--mono);white-space:nowrap;display:inline-block;border:1px solid;}
 .days-badge{font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:5px;font-weight:700;white-space:nowrap;text-align:center;border:1px solid;}
 
-/* SEMAFORO */
 .semaforo{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
 .sem-card{background:var(--surface);border-radius:12px;padding:16px;border:1.5px solid var(--border);box-shadow:var(--shadow);border-top:4px solid;}
 .sem-card.red{border-top-color:var(--red);}.sem-card.amber{border-top-color:var(--amber);}.sem-card.green{border-top-color:var(--green);}
@@ -238,7 +215,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .sem-item:last-child{border-bottom:none;}
 .sem-item strong{font-family:var(--mono);color:var(--text);font-size:10px;font-weight:700;}
 
-/* ACCIONES */
 .acciones-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
 .ac-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:15px;box-shadow:var(--shadow);border-top:3px solid var(--blue);}
 .ac-name{font-size:11px;font-weight:700;color:var(--blue);font-family:var(--mono);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
@@ -246,7 +222,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .ac-item:last-child{border-bottom:none;}
 .ac-item strong{color:var(--text);font-family:var(--mono);font-size:9px;font-weight:700;}
 
-/* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(13,19,33,0.45);z-index:200;align-items:flex-start;justify-content:center;padding-top:40px;backdrop-filter:blur(3px);}
 .modal-bg.open{display:flex;}
 .modal{background:var(--surface);border:1.5px solid var(--border2);border-radius:14px;padding:24px;width:480px;max-width:96%;box-shadow:0 24px 60px rgba(13,19,33,0.18);max-height:90vh;overflow-y:auto;}
@@ -270,7 +245,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 .add-btn:hover{background:var(--blue);color:#fff;border-color:var(--blue);}
 .section-title{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.7px;color:var(--muted);margin-bottom:14px;padding-bottom:7px;border-bottom:2px solid var(--border);font-weight:700;}
 
-/* LOADING */
 .loading-overlay{position:fixed;inset:0;background:rgba(244,246,251,0.92);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
 .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -279,7 +253,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 </head>
 <body>
 
-<!-- Loading overlay -->
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
   <div class="loading-txt">Conectando con Firebase…</div>
@@ -287,7 +260,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 
 <div style="max-width:1400px;margin:0 auto;">
 
-  <!-- HEADER -->
   <div class="header">
     <div class="header-left">
       <h1>🔧 Dashboard Taller RPT</h1>
@@ -305,17 +277,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
     </div>
   </div>
 
-  <!-- KPI CARDS -->
   <div class="kpi-row" id="kpis"></div>
 
-  <!-- TABS -->
   <div class="tabs">
     <div class="tab active" onclick="switchTab('servicios',this)">Servicios <span class="tab-cnt" id="cnt-s">—</span></div>
     <div class="tab" onclick="switchTab('semaforo',this)">Semáforo de vencimientos</div>
     <div class="tab" onclick="switchTab('acciones',this)">Acciones por responsable</div>
   </div>
 
-  <!-- PANEL: SERVICIOS -->
   <div id="panel-servicios">
     <div class="filters">
       <span class="filter-label">Filtrar:</span>
@@ -324,13 +293,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
         <option>Alta</option><option>Media</option><option>Baja</option>
         <option>Stand-by</option><option>Sin OC</option><option>Devolución</option><option>Finalizado</option>
       </select>
+      <!-- El filtro de clientes se construye dinámicamente desde Firebase -->
       <select class="filter-select" id="flt-cl" onchange="applyFilters()">
         <option value="">Todos los clientes</option>
-        <option>ANTAMINA</option><option>SPCC</option><option>CERRO VERDE</option>
-        <option>GOLD FIELDS</option><option>CHINALCO</option><option>KALLPA</option>
-        <option>MINERA PODEROSA</option><option>QUIMPAC</option><option>QUENUALES</option>
-        <option>VOLCAN PARAGSHA</option><option>CEMENTO PACASMAYO</option>
-        <option>NEXA CJMQ</option><option>ANTAPACCAY</option><option>CENATEC (REPSOL)</option>
       </select>
       <input class="search-box" id="search" placeholder="🔍 Buscar proyecto..." oninput="applyFilters()">
     </div>
@@ -346,13 +311,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
     <button class="add-btn" onclick="openModal(-1)">+ Agregar servicio nuevo</button>
   </div>
 
-  <!-- PANEL: SEMAFORO -->
   <div id="panel-semaforo" style="display:none;">
     <p class="section-title">Estado de vencimientos de OC activos</p>
     <div class="semaforo" id="sem-grid"></div>
   </div>
 
-  <!-- PANEL: ACCIONES -->
   <div id="panel-acciones" style="display:none;">
     <p class="section-title">Acciones pendientes por responsable</p>
     <div class="acciones-grid" id="ac-grid"></div>
@@ -421,7 +384,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 </div>
 
 <script>
-// ─── HELPERS ────────────────────────────────────────────────────────────────
 const prColors={
   'Alta':{bg:'#fdeaea',tx:'#b91c1c',bd:'#f59595'},
   'Media':{bg:'#fff4e0',tx:'#92400e',bd:'#f5c96e'},
@@ -443,9 +405,8 @@ function siNoBadge(v,mode){
 function fDate(d){if(!d)return'—';const[y,m,dd]=d.split('-');return`${dd}/${m}/${String(y).slice(2)}`;}
 
 let activeTab='servicios';
-let editId=null; // Guarda el id (PR XXX) del proyecto en edición
+let editId=null;
 
-// ─── KPIs ───────────────────────────────────────────────────────────────────
 function renderKPIs(){
   const S=window._SERVICIOS||[];
   const total=S.length;
@@ -467,12 +428,20 @@ function renderKPIs(){
   document.getElementById('cnt-s').textContent=total;
 }
 
-// ─── SERVICIOS ──────────────────────────────────────────────────────────────
 function renderServicios(){
   const S=window._SERVICIOS||[];
+
+  // ─── Reconstruir filtro de clientes dinámicamente ───────────────────
+  const fltCl = document.getElementById('flt-cl');
+  const valorActual = fltCl.value;
+  const clientesUnicos = [...new Set(S.map(p=>p.cl).filter(Boolean))].sort();
+  fltCl.innerHTML = '<option value="">Todos los clientes</option>' +
+    clientesUnicos.map(c=>`<option${valorActual===c?' selected':''}>${c}</option>`).join('');
+  // ────────────────────────────────────────────────────────────────────
+
   const comFlt=document.getElementById('flt-comercial').value;
   const prFlt=document.getElementById('flt-pr').value;
-  const clFlt=document.getElementById('flt-cl').value;
+  const clFlt=fltCl.value;
   const srch=(document.getElementById('search').value||'').toLowerCase();
   const filtered=S.filter(p=>{
     if(comFlt&&p.team!==comFlt)return false;
@@ -512,15 +481,12 @@ function renderServicios(){
   }).join('');
   document.getElementById('list').innerHTML=html||`<p style="color:var(--dim);font-size:12px;padding:20px 12px;">No hay proyectos que coincidan con los filtros.</p>`;
 
-  // Quitar loading cuando ya hay datos
   document.getElementById('loading-overlay').style.display='none';
 }
 
 function applyFilters(){renderServicios();}
 
-// ─── SEMÁFORO ───────────────────────────────────────────────────────────────
 function calcDias(p){
-  // Calcula días restantes desde hoy hasta fecha de entrega
   if(!p.date || ['Finalizado','Devolución','Sin OC','Stand-by'].includes(p.pr)) return null;
   const today = new Date(); today.setHours(0,0,0,0);
   const entrega = new Date(p.date); entrega.setHours(0,0,0,0);
@@ -530,12 +496,10 @@ function calcDias(p){
 function renderSemaforo(){
   const S=window._SERVICIOS||[];
   const activos=S.filter(p=>!['Finalizado','Devolución','Sin OC','Stand-by'].includes(p.pr) && p.date);
-  
   const withDias = activos.map(p=>({...p, _dias: calcDias(p)})).filter(p=>p._dias!==null);
   const vencidos = withDias.filter(p=>p._dias<0).sort((a,b)=>a._dias-b._dias);
   const pronto   = withDias.filter(p=>p._dias>=0&&p._dias<=30).sort((a,b)=>a._dias-b._dias);
   const ok       = withDias.filter(p=>p._dias>30).sort((a,b)=>a._dias-b._dias);
-
   function items(arr){
     if(!arr.length)return`<div class="sem-item" style="color:var(--dim);">Sin proyectos en esta categoría</div>`;
     return arr.map(p=>`<div class="sem-item"><span style="font-weight:600;">${p.id}</span><span style="font-size:9px;color:var(--dim);">${p.cl}</span><strong>${p._dias}d</strong></div>`).join('');
@@ -547,26 +511,20 @@ function renderSemaforo(){
   `;
 }
 
-// ─── ACCIONES (dinámico desde Firebase) ─────────────────────────────────────
 function renderAcciones(){
   const S=window._SERVICIOS||[];
   const grupos = {};
-
   S.forEach(p => {
     if(!p.team) return;
-    if(p.pr==='Finalizado') return; // excluir finalizados
-
+    if(p.pr==='Finalizado') return;
     if(!grupos[p.team]) grupos[p.team] = [];
     grupos[p.team].push(p);
   });
-
   if(Object.keys(grupos).length === 0){
     document.getElementById('ac-grid').innerHTML=`<p style="color:var(--dim);font-size:12px;padding:20px;">No hay acciones pendientes.</p>`;
     return;
   }
-
   const prColors2={'Alta':'#d62b2b','Media':'#c97a00','Baja':'#1751c8','Stand-by':'#6d28d9','Sin OC':'#5a6480','Devolución':'#0077a8'};
-
   document.getElementById('ac-grid').innerHTML=Object.entries(grupos)
     .sort((a,b)=>a[0].localeCompare(b[0]))
     .map(([nom,its])=>`
@@ -583,7 +541,6 @@ function renderAcciones(){
   `).join('');
 }
 
-// ─── TABS ───────────────────────────────────────────────────────────────────
 function switchTab(name,el){
   activeTab=name;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -595,7 +552,6 @@ function switchTab(name,el){
   if(name==='acciones')renderAcciones();
 }
 
-// ─── MODAL ──────────────────────────────────────────────────────────────────
 function openModal(id){
   editId=id;
   const S=window._SERVICIOS||[];
@@ -665,7 +621,6 @@ function saveM(){
     comt:document.getElementById('m-comt').value.trim(),
     ac:'',dias:0
   };
-  // Si es edición y el id cambió, eliminamos el viejo y creamos nuevo
   if(editId!==-1 && editId!==nid){
     window._fbDelete(editId);
     window._fbSave(o, null);
@@ -675,15 +630,12 @@ function saveM(){
   closeM();
 }
 
-// ─── TICKER ──────────────────────────────────────────────────────────────────
 function updClk(){
   const e=document.getElementById('clk');
   if(e)e.textContent='Última actualización: '+new Date().toLocaleTimeString('es-PE');
 }
 setInterval(updClk, 30000);
 
-// ─── EXPONER SERVICIOS AL MÓDULO FIREBASE ────────────────────────────────────
-// El módulo Firebase escribe en window._SERVICIOS y llama renderKPIs/renderServicios
 window._SERVICIOS=[];
 window.renderKPIs=renderKPIs;
 window.renderServicios=renderServicios;
